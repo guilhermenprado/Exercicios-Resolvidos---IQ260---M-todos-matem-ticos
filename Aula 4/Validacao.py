@@ -30,7 +30,7 @@ imax=0
 f=0
 s=0
 
-#executando metodo Eliminacao de Gauss com pivotamento parcial
+#executando metodo Decomposicao LU pelo metodo de Doolittle com pivotamento parcial
 while h<n and k<n:
     imax=h+np.argmax(np.abs(matrizA[h:,k]))
     if matrizA[imax,k]==0:
@@ -40,13 +40,15 @@ while h<n and k<n:
         vetorb[[h,imax]]=vetorb[[imax,h]]
         i=h+1
         while i<n:
-            f=matrizA[i,k]/matrizA[h,k]
-            matrizA[i,k]=0
+            #print(matrizA[i,k],matrizA[k,k])
+            matrizA[i,k]=matrizA[i,k]/matrizA[k,k]
+           # print(matrizA[i,k])
             j=k+1
             while j<n:
-                matrizA[i,j]=matrizA[i,j]-f*matrizA[h,j]
+               # print(matrizA[i,j],matrizA[i,k],matrizA[k,j])
+                matrizA[i,j]=matrizA[i,j]-matrizA[i,k]*matrizA[k,j]
+                #print(matrizA[i,j],i,j)
                 j=j+1
-            vetorb[i]=vetorb[i]-vetorb[h]*f
             i=i+1
         h=h+1
         k=k+1
@@ -54,8 +56,25 @@ while h<n and k<n:
 print(matrizA)
 print(vetorb)
 
+#Executando a substituicao progressiva
+vetorx[0]=vetorb[0]
+i=1
+while i<n:
+    s=0
+    j=0
+    while j<i:
+        print(s,matrizA[i,j],vetorx[j],i,j)
+        s=s+matrizA[i,j]*vetorx[j]
+        j=j+1
+    print(vetorx[i],vetorb[i],s)
+    vetorx[i]=(vetorb[i]-s)
+    print(vetorx[i])
+    i=i+1
+
+print(vetorx)
+
 #Executando a substituicao reversa
-vetorx[n-1]=vetorb[n-1]/matrizA[n-1,n-1]
+vetorx[n-1]=vetorx[n-1]/matrizA[n-1,n-1]
 i=n-2
 while i>=0:
     s=0
