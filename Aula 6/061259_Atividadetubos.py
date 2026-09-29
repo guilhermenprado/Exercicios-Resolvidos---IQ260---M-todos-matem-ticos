@@ -60,7 +60,7 @@ while (erro>=tolerancia):
         vetork[i]=K(vetorx[i],dados[0,i],dados[1,i])
         i=i+1
 
-    print(vetork)
+    #print(vetork)
 
     #definindo e calculando matriz J
     matrizJ=np.array([
@@ -75,10 +75,10 @@ while (erro>=tolerancia):
 
     matrizJ_num=matrizJ.astype(float)
 
-    print(matrizJ_num)
+    #print(matrizJ_num)
 
     resultados = np.array([f(*vetorx) for f in vetorfx])
-    print(resultados)
+    #print(resultados)
 
     #Declarando matriz identidade = vetor b
     matrizI=np.array([
@@ -132,7 +132,7 @@ while (erro>=tolerancia):
             h=h+1
             k=k+1
 
-    print(matrizJ_num)
+    #print(matrizJ_num)
 
     #Executando a substituicao progressiva
     c=0
@@ -161,7 +161,7 @@ while (erro>=tolerancia):
             i=i-1
 
         c=c+1
-    print(matrizJinv)
+    #print(matrizJinv)
 
     #Calcular xi+1
     vetorxnovo=vetorx-np.dot(matrizJinv,resultados)
@@ -172,6 +172,175 @@ while (erro>=tolerancia):
 
     vetorx=vetorxnovo.copy()
     contador=contador+1
-    print(vetorx)
-    print(contador,erro)
-print(f"Encontramos o vetor resultado {vetorx} após {contador} iterações com erro de {erro}")
+    #print(vetorx)
+    #print(contador,erro)
+print(f"Para o Método de Newton Modificado encontramos o vetor resultado {vetorx} após {contador} iterações com erro de {erro}")
+
+
+#Utilizando metodo de serman-morisson
+
+#definindo vetor x
+vetorx=np.array([0.2,0.2,0.2,0.2,0.2,0.2,0.2])
+
+#definindo vetorK
+vetork=np.array([0,0,0,0,0,0,0])
+
+contador=0
+#calculando vetorK
+i=0
+
+while i<7:
+    vetork[i]=K(vetorx[i],dados[0,i],dados[1,i])
+    i=i+1
+
+#print(vetork)
+
+#definindo e calculando matriz J
+matrizJ=np.array([
+    [-1,0,0,0,0,-1,0],
+    [1,-1,0,0,0,0,-1],
+    [0,1,1,0,0,0,0],
+    [0,0,0,0,-1,1,0],
+    [0,0,0,-1,1,0,1],
+    [2*vetork[0]*vetorx[0],0,0,0,-2*vetork[4]*vetorx[4],-2*vetork[5]*vetorx[5],2*vetork[6]*vetorx[6]],
+    [0,2*vetork[1]*vetorx[1],-2*vetork[2]*vetorx[2],-2*vetork[3]*vetorx[3],0,0,-2*vetork[6]*vetorx[6]]
+], dtype=object)
+
+matrizJ_num=matrizJ.astype(float)
+
+#print(matrizJ_num)
+
+resultados = np.array([f(*vetorx) for f in vetorfx])
+#print(resultados)
+
+#Declarando matriz identidade = vetor b
+matrizI=np.array([
+[1,0,0,0,0,0,0],
+[0,1,0,0,0,0,0],
+[0,0,1,0,0,0,0],
+[0,0,0,1,0,0,0],
+[0,0,0,0,1,0,0],
+[0,0,0,0,0,1,0],
+[0,0,0,0,0,0,1]
+], dtype=float)
+
+#Declarando matrizJinv
+matrizJinv=np.array([
+[1,0,0,0,0,0,0],
+[0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0]
+], dtype=float)
+
+#Executando a inversao da matriz
+
+#declarando variaveis
+n=7
+h=0
+k=0
+i=0
+j=0
+imax=0
+f=0
+
+#executando metodo Decomposicao LU pelo metodo de Doolittle com pivotamento parcial
+while h<n and k<n:
+    imax=h+np.argmax(np.abs(matrizJ_num[h:,k]))
+    if matrizJ_num[imax,k]==0:
+        k=k+1
+    else:
+        matrizJ_num[[h,imax]]=matrizJ_num[[imax,h]]
+        matrizI[[h,imax]]=matrizI[[imax,h]]
+        i=h+1
+        while i<n:
+            matrizJ_num[i,k]=matrizJ_num[i,k]/matrizJ_num[k,k]
+            j=k+1
+            while j<n:
+                matrizJ_num[i,j]=matrizJ_num[i,j]-matrizJ_num[i,k]*matrizJ_num[k,j]
+                j=j+1
+            i=i+1
+        h=h+1
+        k=k+1
+
+#print(matrizJ_num)
+
+#Executando a substituicao progressiva
+c=0
+while c<n:
+    matrizJinv[0,c]=matrizI[0,c]
+    i=1
+    while i<n:
+        s=0
+        j=0
+        while j<i:
+            s=s+matrizJ_num[i,j]*matrizJinv[j,c]
+            j=j+1
+        matrizJinv[i,c]=(matrizI[i,c]-s)
+        i=i+1
+
+    #Executando a substituicao reversa
+    matrizJinv[n-1,c]=matrizJinv[n-1,c]/matrizJ_num[n-1,n-1]
+    i=n-2
+    while i>=0:
+        s=0
+        j=i+1
+        while j<n:
+            s=s+matrizJ_num[i,j]*matrizJinv[j,c]
+            j=j+1
+        matrizJinv[i,c]=(matrizJinv[i,c]-s)/matrizJ_num[i,i]
+        i=i-1
+
+    c=c+1
+#print(matrizJinv)
+
+#Calcular xi+1
+vetorxnovo=vetorx-np.dot(matrizJinv,resultados)
+
+#calcular Erro
+aux2=(vetorxnovo-vetorx)**2
+erro=np.sqrt(np.sum(aux2))
+
+#realizando o calculo de J-1 numericamente
+#declarando erro
+erro=1
+tolerancia=1e-12
+
+#realizando as iteracoes do metodo
+while (erro>=tolerancia):
+
+    #calculando deltax
+    deltax=vetorxnovo-vetorx
+
+    #calculadno delta fx
+    resultadosnovo = np.array([f(*vetorxnovo) for f in vetorfx])
+
+    deltafx=resultadosnovo-resultados
+    resultados=resultadosnovo.copy()
+
+    #calculando vetorX transposta
+    deltax_col = deltax.reshape(-1, 1)
+    deltax_lin = deltax.reshape(1, -1) 
+    deltafx_col = deltafx.reshape(-1, 1)
+
+    #calculando J-1 nova
+    sup1 = deltax_col - np.dot(matrizJinv, deltafx_col)
+    sup2 = np.dot(deltax_lin, matrizJinv)                       
+    sup3 = np.dot(sup2,deltafx_col)[0, 0]
+
+    matrizJinv = matrizJinv + np.dot(sup1, sup2) / sup3
+
+    vetorx=vetorxnovo.copy()
+    #Calcular xi+1
+    vetorxnovo=vetorxnovo-np.dot(matrizJinv,resultadosnovo)
+
+    #calcular Erro
+    aux2=(vetorxnovo-vetorx)**2
+    erro=np.sqrt(np.sum(aux2))
+
+    contador=contador+1
+    #print(vetorx)
+    #print(contador,erro)
+print(f"Para o Método de Sherman-Morisson encontramos o vetor resultado {vetorx} após {contador} iterações com erro de {erro}")

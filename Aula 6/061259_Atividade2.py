@@ -1,7 +1,7 @@
 import numpy as np
 
 #definindo vetor x
-vetorx=np.array([0.0002,0.0002,0.0002,0.0002])
+vetorx=np.array([0.002,0.002,0.002,0.002])
 
 #Definindo parametros do processo
 q1=1
@@ -48,12 +48,8 @@ matrizJ=np.array([
     [a41,a42,a43,a44]
 ], dtype=object)
 
-#declarando erro
-erro=1
-tolerancia=1e-5
 
-#Utilizando metodo de newtown multidimensional
-
+#Utilizando metodo de broyden
 
 CA=vetorx[0]
 CB=vetorx[1]
@@ -62,7 +58,9 @@ CD=vetorx[3]
 
 print(CA,CB,CC,CD)
 
-resultados= np.vectorize(lambda f: f(CA,CB,CC,CD))(vetorfx).astype(float)
+resultados= np.vectorize(lambda f: f(CA,CB,CC,CD))(vetorfx)
+resultadomatriz= np.vectorize(lambda f: f(CA, CB))(matrizJ)
+
 print(resultados)
 
 
@@ -70,16 +68,6 @@ print(resultados)
 
 #Declarando matrizA = MatrizJ -->utiliza a matriz como numeros para o calculo
 matrizJ_num= np.vectorize(lambda f: f(CA, CB))(matrizJ).astype(float)
-
-#calculando a matrizJ pelo metodo de broyle
-
-vetorxT=vetorx.T
-sup1=resultados-np.dot(matrizJ_num,vetorx)
-sup2=np.dot(vetorx,vetorx)
-sup3=sup1/sup2
-sup4=np.dot(sup3,vetorxT)
-
-matrizJ_num=matrizJ_num+sup4
 print(matrizJ_num)
 
 #Declarando matriz identidade =vetor b
@@ -106,27 +94,28 @@ i=0
 j=0
 imax=0
 f=0
+matrizJ_num2=matrizJ_num.copy()
 
 #executando metodo Decomposicao LU pelo metodo de Doolittle com pivotamento parcial
 while h<n and k<n:
-    imax=h+np.argmax(np.abs(matrizJ_num[h:,k]))
-    if matrizJ_num[imax,k]==0:
+    imax=h+np.argmax(np.abs(matrizJ_num2[h:,k]))
+    if matrizJ_num2[imax,k]==0:
         k=k+1
     else:
-        matrizJ_num[[h,imax]]=matrizJ_num[[imax,h]]
+        matrizJ_num2[[h,imax]]=matrizJ_num2[[imax,h]]
         matrizI[[h,imax]]=matrizI[[imax,h]]
         i=h+1
         while i<n:
-            matrizJ_num[i,k]=matrizJ_num[i,k]/matrizJ_num[k,k]
+            matrizJ_num2[i,k]=matrizJ_num2[i,k]/matrizJ_num2[k,k]
             j=k+1
             while j<n:
-                matrizJ_num[i,j]=matrizJ_num[i,j]-matrizJ_num[i,k]*matrizJ_num[k,j]
+                matrizJ_num2[i,j]=matrizJ_num2[i,j]-matrizJ_num2[i,k]*matrizJ_num2[k,j]
                 j=j+1
             i=i+1
         h=h+1
         k=k+1
 
-print(matrizJ_num)
+print(matrizJ_num2)
 
 #Executando a substituicao progressiva
 c=0
@@ -137,47 +126,26 @@ while c<4:
         s=0
         j=0
         while j<i:
-            s=s+matrizJ_num[i,j]*matrizJinv[j,c]
+            s=s+matrizJ_num2[i,j]*matrizJinv[j,c]
             j=j+1
         matrizJinv[i,c]=(matrizI[i,c]-s)
         i=i+1
 
     #Executando a substituicao reversa
-    matrizJinv[n-1,c]=matrizJinv[n-1,c]/matrizJ_num[n-1,n-1]
+    matrizJinv[n-1,c]=matrizJinv[n-1,c]/matrizJ_num2[n-1,n-1]
     i=n-2
     while i>=0:
         s=0
         j=i+1
         while j<n:
-            s=s+matrizJ_num[i,j]*matrizJinv[j,c]
+            s=s+matrizJ_num2[i,j]*matrizJinv[j,c]
             j=j+1
-        matrizJinv[i,c]=(matrizJinv[i,c]-s)/matrizJ_num[i,i]
+        matrizJinv[i,c]=(matrizJinv[i,c]-s)/matrizJ_num2[i,i]
         i=i-1
 
     c=c+1
 print(matrizJinv)
 
-"""""
-#armazena os valores antigos e prepara para calcular o J-1
-resultadosold=resultados.copy()
-vetorxold=vetorx.copy()
-matrizJinvold=matrizJinv.copy()
-vetorxT=vetorx.T
-vetorxTold=vetorxT.copy()
-
-matrizJinv=vetorxold/resultadosold
-
-
-sup1=vetorxold-np.dot(matrizJinvold,resultadosold)
-sup2=np.dot(vetorxTold,matrizJinvold,resultadosold)
-sup3=sup1@sup2
-sup4=np.dot(sup3,vetorxTold)
-sup5=np.dot(sup4,matrizJinvold)
-
-matrizJinv=matrizJinvold+sup5
-
-
-print(matrizJinv)"""
 
 #Calcular xi+1
 vetorxnovo=vetorx-np.dot(matrizJinv,resultados)
@@ -186,7 +154,47 @@ vetorxnovo=vetorx-np.dot(matrizJinv,resultados)
 aux2=(vetorxnovo-vetorx)**2
 erro=np.sqrt(np.sum(aux2))
 
-vetorx=vetorxnovo.copy()
+#realizando o calculo de J-1 numericamente
+#declarando erro
+erro=1
+tolerancia=1e-5
 
-print(vetorx)
-print(erro)
+#realizando as iteracoes do metodo
+while (erro>=tolerancia):
+
+    #calculando deltax
+    deltax=vetorxnovo-vetorx
+
+    #calculadno delta fx
+    CA=vetorxnovo[0]
+    CB=vetorxnovo[1]
+    CC=vetorxnovo[2]
+    CD=vetorxnovo[3]
+
+    resultadosnovo= np.vectorize(lambda f: f(CA,CB,CC,CD))(vetorfx)
+
+    deltafx=resultadosnovo-resultados
+    resultados=resultadosnovo.copy()
+
+    #calculando vetorX transposta
+    deltax_col = deltax.reshape(-1, 1)
+    deltax_lin = deltax.reshape(1, -1) 
+    deltafx_col = deltafx.reshape(-1, 1)
+
+    #calculando J-1 nova
+    sup1 = deltax_col - np.dot(matrizJinv, deltafx_col)
+    sup2 = np.dot(deltax_lin, matrizJinv)                       
+    sup3 = np.dot(sup2,deltafx_col)[0, 0]
+
+    matrizJinv = matrizJinv + np.dot(sup1, sup2) / sup3
+
+    vetorx=vetorxnovo.copy()
+    #Calcular xi+1
+    vetorxnovo=vetorxnovo-np.dot(matrizJinv,resultadosnovo)
+
+    #calcular Erro
+    aux2=(vetorxnovo-vetorx)**2
+    erro=np.sqrt(np.sum(aux2))
+
+    print(vetorxnovo)
+    print(erro)
